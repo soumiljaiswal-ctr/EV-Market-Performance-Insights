@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>EV Market Dashboard &amp; Story</title>
+  <meta name="description" content="An interactive dashboard and narrative on the global electric vehicle market: sales, market share, powertrain mix and charging infrastructure.">
+  <meta name="keywords" content="electric vehicles, EV market, dashboard, Tableau, sustainability">
+
+  <!-- Favicons -->
+  <link href="static/img/favicon.png" rel="icon">
+  <link href="static/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+  <style>
+    /* ---------------------------------------------------------
+       Design tokens
+    --------------------------------------------------------- */
+    :root {
+      --bg: #f5f8fb;
+      --surface: #ffffff;
+      --surface-2: #eef3f9;
+      --ink: #0e1b2c;
+      --ink-soft: #33465e;
+      --muted: #64768e;
+      --border: #e2e9f2;
+
+      --accent: #10b981;
+      --accent-dark: #059669;
+      --accent-2: #0ea5e9;
+      --accent-3: #f59e0b;
+      --accent-4: #8b5cf6;
+
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(14, 27, 44, .06), 0 1px 3px rgba(14, 27, 44, .04);
+      --shadow-md: 0 6px 18px -6px rgba(14, 27, 44, .16), 0 2px 6px rgba(14, 27, 44, .05);
+      --shadow-lg: 0 22px 48px -20px rgba(14, 27, 44, .35);
+
+      --font-body: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-head: 'Raleway', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+      --maxw: 1180px;
+    }
+
+    /* ---------------------------------------------------------
+       Base
+    --------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-head);
+      line-height: 1.18;
+      letter-spacing: -.02em;
+      margin: 0 0 .5em;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 1em; }
+
+    a { color: var(--accent-dark); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    img { max-width: 100%; display: block; }
+
+    .container {
+      width: 100%;
+      max-width: var(--maxw);
+      margin-inline: auto;
+      padding-inline: 1.25rem;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0);
+      white-space: nowrap; border: 0;
+    }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -100px; left: 1rem;
+      z-index: 999;
+      background: var(--ink);
+      color: #fff;
+      padding: .7rem 1.1rem;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      transition: top .2s ease;
+    }
+    .skip-link:focus { top: 0; }
+
+    :focus-visible {
+      outline: 3px solid var(--accent-2);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* ---------------------------------------------------------
+       Header / nav
+    --------------------------------------------------------- */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, .82);
+      backdrop-filter: saturate(180%) blur(14px);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 68px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -.01em;
+      color: var(--ink);
+    }
+    .brand:hover { text-decoration: none; }
+
+    .brand-mark {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-size: 1rem;
+      box-shadow: 0 6px 14px -6px rgba(16, 185, 129, .8);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+      list-style: none;
+      margin: 0; padding: 0;
+    }
+
+    .nav-links a {
+      display: inline-block;
+      padding: .5rem .8rem;
+      border-radius: 999px;
+      color: var(--ink-soft);
+      font-size: .9rem;
+      font-weight: 500;
+      transition: background .18s ease, color .18s ease;
+    }
+    .nav-links a:hover,
+    .nav-links a[aria-current="true"] {
+      background: var(--surface-2);
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-cta {
+      display: inline-block;
+      padding: .6rem 1.1rem;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff !important;
+      font-size: .875rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+      transition: transform .18s ease, background .18s ease;
+    }
+    .nav-cta:hover { background: #16263c; transform: translateY(-1px); text-decoration: none; }
+
+    @media (max-width: 760px) {
+      .nav-links { display: none; }
+    }
+
+    /* ---------------------------------------------------------
+       Hero
+    --------------------------------------------------------- */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(1200px 520px at 80% -10%, #12352b 0%, transparent 60%),
+                  radial-gradient(900px 480px at 0% 110%, #0b2740 0%, transparent 55%),
+                  #08131f;
+      color: #eaf3f7;
+      padding: clamp(3.5rem, 8vw, 6.5rem) 0 clamp(3rem, 6vw, 5rem);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.045) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(70% 70% at 50% 40%, #000 20%, transparent 100%);
+      -webkit-mask-image: radial-gradient(70% 70% at 50% 40%, #000 20%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero .container { position: relative; z-index: 1; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .85rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, .12);
+      border: 1px solid rgba(16, 185, 129, .32);
+      color: #7bf0c1;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+    }
+
+    .eyebrow .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, .2);
+    }
+
+    .hero h1 {
+      color: #fff;
+      font-size: clamp(2.1rem, 5.2vw, 3.6rem);
+      font-weight: 800;
+      max-width: 20ch;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(100deg, #34d399, #38bdf8 60%, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-lead {
+      max-width: 60ch;
+      color: #a9bfd1;
+      font-size: clamp(1rem, 1.6vw, 1.15rem);
+      margin-bottom: 2rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .8rem 1.4rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: .94rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-2px); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      color: #04231a;
+      box-shadow: 0 14px 30px -14px rgba(16, 185, 129, .95);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #4ade80, #10b981); }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, .05);
+      border-color: rgba(255, 255, 255, .22);
+      color: #dbe9f2;
+    }
+    .btn-ghost:hover { background: rgba(255, 255, 255, .11); color: #fff; }
+
+    /* ---------------------------------------------------------
+       Stat strip
+    --------------------------------------------------------- */
+    .stats {
+      position: relative;
+      margin-top: -3.1rem;
+      z-index: 5;
+      padding-bottom: 1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat {
+      padding: .35rem .9rem;
+      border-left: 3px solid var(--accent);
+    }
+    .stat:nth-child(2) { border-left-color: var(--accent-2); }
+    .stat:nth-child(3) { border-left-color: var(--accent-3); }
+    .stat:nth-child(4) { border-left-color: var(--accent-4); }
+
+    .stat-value {
+      font-family: var(--font-head);
+      font-size: clamp(1.6rem, 3vw, 2.15rem);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--ink);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: .35rem;
+    }
+
+    .stat-sub {
+      font-size: .82rem;
+      color: var(--accent-dark);
+      font-weight: 600;
+      margin-top: .1rem;
+    }
+
+    @media (max-width: 860px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 460px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .stats { margin-top: -2.2rem; }
+    }
+
+    /* ---------------------------------------------------------
+       Sections
+    --------------------------------------------------------- */
+    section { padding-block: clamp(3rem, 6vw, 4.75rem); }
+
+    .section-head {
+      max-width: 62ch;
+      margin-bottom: 2.25rem;
+    }
+
+    .section-head .kicker {
+      display: block;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: .7rem;
+    }
+
+    .section-head h2 {
+      font-size: clamp(1.6rem, 3.2vw, 2.35rem);
+      font-weight: 800;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      font-size: 1.02rem;
+      margin-bottom: 0;
+    }
+
+    /* ---------------------------------------------------------
+       Tableau embed
+    --------------------------------------------------------- */
+    .tableau-embed {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: .75rem;
+      overflow: hidden;
+    }
+
+    .tableau-embed .tableauPlaceholder {
+      width: 100% !important;
+      margin: 0;
+    }
+
+    .tableau-embed iframe {
+      display: block;
+      width: 100% !important;
+      border: 0;
+      border-radius: var(--radius-sm);
+    }
+
+    @media (max-width: 600px) {
+      .tableau-embed { padding: .4rem; }
+    }
+
+    /* ---------------------------------------------------------
+       Story
+    --------------------------------------------------------- */
+    .story {
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .story-steps {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .step {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    }
+
+    .step-num {
+      display: inline-grid;
+      place-items: center;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--ink);
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: .95rem;
+      margin-bottom: .9rem;
+    }
+
+    .step h3 {
+      font-size: 1.1rem;
+      margin-bottom: .45rem;
+    }
+
+    .step p {
+      color: var(--muted);
+      font-size: .94rem;
+      margin-bottom: 0;
+    }
+
+    .step .figure {
+      display: inline-block;
+      margin-top: .9rem;
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: -.02em;
+      color: var(--accent-dark);
+    }
+
+    @media (max-width: 900px) {
+      .story-steps { grid-template-columns: 1fr; }
+    }
+
+    /* Pull quote */
+    .pullquote {
+      margin-top: 2.5rem;
+      border-left: 4px solid var(--accent);
+      padding: 1.1rem 0 1.1rem 1.5rem;
+      max-width: 70ch;
+    }
+    .pullquote p {
+      font-family: var(--font-head);
+      font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--ink);
+      margin: 0;
+    }
+    .pullquote cite {
+      display: block;
+      margin-top: .7rem;
+      font-style: normal;
+      font-size: .85rem;
+      color: var(--muted);
+      letter-spacing: .02em;
+    }
+
+    /* ---------------------------------------------------------
+       Data table
+    --------------------------------------------------------- */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+      min-width: 620px;
+    }
+
+    thead th {
+      text-align: left;
+      font-family: var(--font-head);
+      font-size: .76rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--surface-2);
+      padding: .85rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: .85rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: #fafcff; }
+
+    td.num, th.num { text-align: right; }
+
+    .delta {
+      display: inline-block;
+      font-weight: 700;
+      font-size: .8rem;
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, .12);
+      color: var(--accent-dark);
+    }
+
+    /* ---------------------------------------------------------
+       Footer
+    --------------------------------------------------------- */
+    .site-footer {
+      background: #08131f;
+      color: #93a8bb;
+      padding: 3rem 0 2rem;
+      font-size: .9rem;
+    }
+
+    .footer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .site-footer .brand { color: #fff; margin-bottom: .8rem; }
+
+    .footer-note {
+      max-width: 46ch;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .footer-links a { color: #c8d7e4; }
+    .footer-links a:hover { color: #fff; }
+
+    .footer-bottom {
+      margin-top: 2.25rem;
+      padding-top: 1.4rem;
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      justify-content: space-between;
+      font-size: .82rem;
+      color: #71869b;
+    }
+
+    /* ---------------------------------------------------------
+       Reveal animation
+    --------------------------------------------------------- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .6s ease, transform .6s cubic-bezier(.22, 1, .36, 1);
+      will-change: opacity, transform;
+    }
+    .reveal.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#dashboard">Skip to dashboard</a>
+
+  <!-- ================= HEADER ================= -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true">⚡</span>
+        <span>EV Market&nbsp;Lens</span>
+      </a>
+
+      <nav aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#dashboard">Explore Dashboard</a></li>
+          <li><a href="#story">Story</a></li>
+          <li><a href="#markets">Markets</a></li>
+          <li><a href="#methodology">Methodology</a></li>
+        </ul>
+      </nav>
+
+      <a class="nav-cta" href="#dashboard">Explore Dashboard</a>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ================= HERO ================= -->
+    <div class="hero">
+      <div class="container">
+        <span class="eyebrow"><span class="dot" aria-hidden="true"></span> Global EV Outlook</span>
+        <h1>The electric vehicle market, <em>decoded</em>.</h1>
+        <p class="hero-lead">
+          Electric cars went from a niche experiment to roughly one in five new cars sold worldwide.
+          Explore the sales curve, the regional race, the powertrain mix and the charging build-out
+          behind the transition.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#dashboard">
+            Create Dashboard
+            <span aria-hidden="true">→</span>
+          </a>
+          <a class="btn btn-ghost" href="#story">Story</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= STAT STRIP ================= -->
+    <div class="stats">
+      <div class="container">
+        <div class="stats-grid" role="list">
+          <div class="stat" role="listitem">
+            <div class="stat-value" data-counter data-target="17.0" data-decimals="1" data-suffix="M">0</div>
+            <div class="stat-label">EVs sold in 2024</div>
+            <div class="stat-sub">+25% year over year</div>
+          </div>
+          <div class="stat" role="listitem">
+            <div class="stat-value" data-counter data-target="20" data-suffix="%">0</div>
+            <div class="stat-label">Share of new car sales</div>
+            <div class="stat-sub">up from 2.5% in 2019</div>
+          </div>
+          <div class="stat" role="listitem">
+            <div class="stat-value" data-counter data-target="5.0" data-decimals="1" data-suffix="M">0</div>
+            <div class="stat-label">Public charge points</div>
+            <div class="stat-sub">+30% year over year</div>
+          </div>
+          <div class="stat" role="listitem">
+            <div class="stat-value" data-counter data-target="65" data-suffix="%">0</div>
+            <div class="stat-label">Sales in China</div>
+            <div class="stat-sub">largest single market</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboard">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Explore Dashboard</span>
+          <h2>Explore Dashboard: the EV market at a glance</h2>
+          <p>
+            The live Tableau dashboard below tracks sales, market share, powertrain mix and charging
+            infrastructure. Use the filters and tabs to drill into regions and years.
+          </p>
+        </div>
+
+        <div class="tableau-embed reveal">
+          <div class='tableauPlaceholder' id='viz1793519818824' style='position: relative;'>
+            <noscript>
+              <a href='#'>
+                <img alt='EV_Market_Dashboard '
+                     src='https://public.tableau.com/static/images/Ev/Ev_Market_Performance/EV_Market_Dashboard/1_rss.png'
+                     style='border: none' />
+              </a>
+            </noscript>
+            <object class='tableauViz' style='display:none;'>
+              <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+              <param name='embed_code_version' value='3' />
+              <param name='site_root' value='' />
+              <param name='name' value='Ev_Market_Performance/EV_Market_Dashboard' />
+              <param name='tabs' value='no' />
+              <param name='toolbar' value='yes' />
+              <param name='static_image' value='https://public.tableau.com/static/images/Ev/Ev_Market_Performance/EV_Market_Dashboard/1.png' />
+              <param name='animate_transition' value='yes' />
+              <param name='display_static_image' value='yes' />
+              <param name='display_spinner' value='yes' />
+              <param name='display_overlay' value='yes' />
+              <param name='display_count' value='yes' />
+              <param name='language' value='en-US' />
+              <param name='filter' value='publish=yes' />
+            </object>
+          </div>
+        </div>
+
+        <script>
+          (function () {
+            var divElement = document.getElementById('viz1793519818824');
+            if (!divElement) return;
+            var vizElement = divElement.getElementsByTagName('object')[0];
+
+            function applySize() {
+              var w = divElement.offsetWidth || 1100;
+              var height = w > 500 ? Math.round(w * 995 / 1566) : 2277;
+              vizElement.style.width = '100%';
+              vizElement.style.height = height + 'px';
+
+              var frame = divElement.querySelector('iframe');
+              if (frame) {
+                frame.style.width = '100%';
+                frame.style.height = height + 'px';
+              }
+            }
+
+            applySize();
+            window.addEventListener('resize', applySize);
+
+            var scriptElement = document.createElement('script');
+            scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+            vizElement.parentNode.insertBefore(scriptElement, vizElement);
+          })();
+        </script>
+      </div>
+    </section>
+
+    <!-- ================= STORY ================= -->
+    <section id="story" class="story">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">The story</span>
+          <h2>The EV transition, told as a story</h2>
+          <p>
+            Scroll through the Tableau story below — it walks from the early adopter years to the
+            mainstream inflection point, one chart at a time.
+          </p>
+        </div>
+
+        <div class="tableau-embed reveal">
+          <div class='tableauPlaceholder' id='viz1793520084610' style='position: relative;'>
+            <noscript>
+              <a href='#'>
+                <img alt='EV_Market_story '
+                     src='https://public.tableau.com/static/images/Ev/Ev_Market_Performance/EV_Market_story/1_rss.png'
+                     style='border: none' />
+              </a>
+            </noscript>
+            <object class='tableauViz' style='display:none;'>
+              <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+              <param name='embed_code_version' value='3' />
+              <param name='site_root' value='' />
+              <param name='name' value='Ev_Market_Performance/EV_Market_story' />
+              <param name='tabs' value='no' />
+              <param name='toolbar' value='yes' />
+              <param name='static_image' value='https://public.tableau.com/static/images/Ev/Ev_Market_Performance/EV_Market_story/1.png' />
+              <param name='animate_transition' value='yes' />
+              <param name='display_static_image' value='yes' />
+              <param name='display_spinner' value='yes' />
+              <param name='display_overlay' value='yes' />
+              <param name='display_count' value='yes' />
+              <param name='language' value='en-US' />
+              <param name='filter' value='publish=yes' />
+            </object>
+          </div>
+        </div>
+
+        <script>
+          (function () {
+            var divElement = document.getElementById('viz1793520084610');
+            if (!divElement) return;
+            var vizElement = divElement.getElementsByTagName('object')[0];
+
+            function applySize() {
+              var w = divElement.offsetWidth || 1100;
+              var height = w > 500 ? Math.round(w * 795 / 1366) : 1400;
+              vizElement.style.width = '100%';
+              vizElement.style.height = height + 'px';
+
+              var frame = divElement.querySelector('iframe');
+              if (frame) {
+                frame.style.width = '100%';
+                frame.style.height = height + 'px';
+              }
+            }
+
+            applySize();
+            window.addEventListener('resize', applySize);
+
+            var scriptElement = document.createElement('script');
+            scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+            vizElement.parentNode.insertBefore(scriptElement, vizElement);
+          })();
+        </script>
+
+        <div class="story-steps" style="margin-top: 2.5rem;">
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">01</span>
+            <h3>Policy set the floor</h3>
+            <p>
+              Purchase incentives, CO₂ fleet targets and city-level access rules made electric cars
+              commercially viable years before they were price-competitive.
+            </p>
+            <span class="figure">2.5% → 20%</span>
+          </article>
+
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">02</span>
+            <h3>Batteries set the ceiling</h3>
+            <p>
+              Pack prices fell by roughly 85% over the past decade, pushing range up and sticker
+              prices down across the segment.
+            </p>
+            <span class="figure">−85%</span>
+          </article>
+
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">03</span>
+            <h3>Charging sets the pace</h3>
+            <p>
+              Public charge points grew roughly fivefold since 2019, but the vehicle-to-charger ratio
+              is worsening in fast-growing markets.
+            </p>
+            <span class="figure">5.0M points</span>
+          </article>
+        </div>
+
+        <blockquote class="pullquote reveal">
+          <p>“The question is no longer whether electric vehicles win — it is how quickly the charging
+            and grid infrastructure can keep up with them.”</p>
+          <cite>Illustrative commentary — replace with your own sourced analysis.</cite>
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- ================= MARKETS TABLE ================= -->
+    <section id="markets">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Markets</span>
+          <h2>Country scoreboard</h2>
+          <p>Sales volume, penetration of new car sales and year-over-year growth for leading markets.</p>
+        </div>
+
+        <div class="table-wrap reveal">
+          <table>
+            <caption class="visually-hidden">Electric car sales and market share by country, 2024 sample data</caption>
+            <thead>
+              <tr>
+                <th scope="col">Market</th>
+                <th scope="col" class="num">EV sales (000)</th>
+                <th scope="col" class="num">Share of new cars</th>
+                <th scope="col" class="num">YoY growth</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">China</th>
+                <td class="num">11,000</td>
+                <td class="num">45%</td>
+                <td class="num"><span class="delta">+32%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">United States</th>
+                <td class="num">1,600</td>
+                <td class="num">10%</td>
+                <td class="num"><span class="delta">+9%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Germany</th>
+                <td class="num">720</td>
+                <td class="num">21%</td>
+                <td class="num"><span class="delta">+4%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">United Kingdom</th>
+                <td class="num">570</td>
+                <td class="num">26%</td>
+                <td class="num"><span class="delta">+18%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">France</th>
+                <td class="num">470</td>
+                <td class="num">24%</td>
+                <td class="num"><span class="delta">+12%</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Norway</th>
+                <td class="num">110</td>
+                <td class="num">90%</td>
+                <td class="num"><span class="delta">+3%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= METHODOLOGY ================= -->
+    <section id="methodology" class="story">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Methodology</span>
+          <h2>How to read this dashboard</h2>
+          <p>
+            Dashboard and story visuals are embedded from Tableau Public. The supporting stats and
+            table on this page are illustrative sample data, structured to match how EV market
+            reporting is normally sliced.
+          </p>
+        </div>
+
+        <div class="story-steps">
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">A</span>
+            <h3>Scope</h3>
+            <p>Passenger light-duty vehicles only. Commercial fleets, buses and two/three-wheelers are excluded from the sales series.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">B</span>
+            <h3>Definitions</h3>
+            <p>“EV” means battery-electric plus plug-in hybrid. Conventional hybrids are counted as combustion vehicles.</p>
+          </article>
+          <article class="step reveal">
+            <span class="step-num" aria-hidden="true">C</span>
+            <h3>Refresh cadence</h3>
+            <p>Annual totals with quarterly partial updates. Charging figures count publicly accessible connectors only.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="#top">
+            <span class="brand-mark" aria-hidden="true">⚡</span>
+            <span>EV Market Lens</span>
+          </a>
+          <p class="footer-note">
+            A single-page dashboard and narrative template for electric vehicle market data.
+            Sample figures only — not investment advice.
+          </p>
+        </div>
+
+        <nav aria-label="Footer">
+          <ul class="footer-links">
+            <li><a href="#dashboard">Explore Dashboard</a></li>
+            <li><a href="#story">Story</a></li>
+            <li><a href="#markets">Markets</a></li>
+            <li><a href="#methodology">Methodology</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© <span id="year">2025</span> EV Market Lens. All rights reserved.</span>
+        <span>Built with Tableau Public · Illustrative data</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---------- Footer year ---------- */
+      const yearEl = document.getElementById('year');
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+      /* ---------- Reveal on scroll ---------- */
+      const revealEls = document.querySelectorAll('.reveal');
+      if (!reduceMotion && 'IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+        revealEls.forEach((el) => revealObserver.observe(el));
+      } else {
+        revealEls.forEach((el) => el.classList.add('is-visible'));
+      }
+
+      /* ---------- Animated counters ---------- */
+      const counters = document.querySelectorAll('[data-counter]');
+
+      const runCounter = (el) => {
+        const target = parseFloat(el.dataset.target || '0');
+        const decimals = parseInt(el.dataset.decimals || '0', 10);
+        const suffix = el.dataset.suffix || '';
+        const duration = 1400;
+        const start = performance.now();
+
+        const format = (v) =>
+          v.toLocaleString(undefined, {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+          }) + suffix;
+
+        if (reduceMotion) {
+          el.textContent = format(target);
+          return;
+        }
+
+        const tick = (now) => {
+          const p = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = format(target * eased);
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = format(target);
+        };
+        requestAnimationFrame(tick);
+      };
+
+      if ('IntersectionObserver' in window) {
+        const counterObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              runCounter(entry.target);
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        counters.forEach((el) => counterObserver.observe(el));
+      } else {
+        counters.forEach(runCounter);
+      }
+    });
+  </script>
+</body>
+
+</html>
