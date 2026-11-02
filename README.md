@@ -76,7 +76,9 @@ https://github.com/soumiljaiswal-ctr/EV-Market-Performance-Insights
 
 🚀 [Click Here to Explore EV Market Performance Dashboard](https://public.tableau.com/app/profile/soumil.jaiswal/viz/Ev_Market_Performance/EV_Market_Dashboard)
 
+## 📖 Live Tableau Story
 
+🚀 [Click Here to Explore EV Market Performance Story](https://public.tableau.com/app/profile/soumil.jaiswal/viz/Ev_Market_Performance/EV_Market_story?publish=yes)
 ---
 
 *Turning Electric Vehicle Market Data into Meaningful Insights.* ⚡
